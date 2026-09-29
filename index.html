@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Anniversary 1Y 11M - Real-time Shop</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK (v9 Moduled via Compatibility) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <!-- Auth Section (เข้าสู่ระบบ / สมัครสมาชิก) -->
+    <div id="auth-section" class="container">
+        <div class="card-box">
+            <h1 class="title">🌸 Happy Anniversary 1Y 11M 🌸</h1>
+            <p class="subtitle">ระบบร้านค้าความทรงจำแบบ Real-time</p>
+
+            <!-- Login Form -->
+            <div id="login-form">
+                <h2>เข้าสู่ระบบ</h2>
+                <div class="input-group">
+                    <label>ชื่อผู้ใช้ (Username)</label>
+                    <input type="text" id="login-username" placeholder="กรอกชื่อผู้ใช้">
+                </div>
+                <div class="input-group">
+                    <label>รหัสผ่าน (Password)</label>
+                    <input type="password" id="login-password" placeholder="กรอกรหัสผ่าน">
+                </div>
+                <button class="btn btn-primary btn-lg" onclick="handleLogin()">เข้าสู่ระบบ</button>
+                <p class="switch-mode">ยังไม่มีบัญชี? <a href="#" onclick="toggleAuth('register')">สมัครสมาชิกที่นี่</a></p>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" class="hidden">
+                <h2>สมัครสมาชิก</h2>
+                <div class="input-group">
+                    <label>ชื่อผู้ใช้ (Username)</label>
+                    <input type="text" id="reg-username" placeholder="ตั้งชื่อผู้ใช้">
+                </div>
+                <div class="input-group">
+                    <label>รหัสผ่าน (Password)</label>
+                    <input type="password" id="reg-password" placeholder="ตั้งรหัสผ่าน">
+                </div>
+                <div class="input-group">
+                    <label>ยืนยันรหัสผ่าน</label>
+                    <input type="password" id="reg-confirm" placeholder="ยืนยันรหัสผ่าน">
+                </div>
+                <div class="input-group">
+                    <label>ชื่อเล่นของคุณ</label>
+                    <input type="text" id="reg-nickname" placeholder="เช่น เค้า, เธอ, ที่รัก">
+                </div>
+
+                <!-- Love Quiz CAPTCHA -->
+                <div class="captcha-box">
+                    <label>💖 ยืนยันตัวตนก่อนสมัคร:</label>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">พิมพ์รหัสลับประจำคู่เรา (212224)</p>
+                    <div style="display:flex; gap:6px;">
+                        <input type="text" id="quiz-ans" placeholder="กรอกรหัสลับ">
+                        <button type="button" class="btn btn-primary" onclick="verifyQuiz()">ตรวจ</button>
+                    </div>
+                    <div id="quiz-status" class="status-pending">❌ ยังไม่ได้ยืนยันตัวตน</div>
+                </div>
+
+                <button class="btn btn-primary btn-lg" onclick="handleRegister()">ยืนยันการสมัครสมาชิก</button>
+                <p class="switch-mode">มีบัญชีอยู่แล้ว? <a href="#" onclick="toggleAuth('login')">เข้าสู่ระบบ</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Section -->
+    <div id="app-section" class="hidden">
+        <header class="navbar">
+            <div class="nav-brand">✨ Happy Anniversary 1Y 11M</div>
+            <div class="nav-user">
+                <span>👋 <strong id="user-display-name">-</strong></span>
+                <span class="diamond-badge">💎 <strong id="user-diamonds">0</strong></span>
+                <button class="btn btn-danger btn-sm" onclick="handleLogout()">ออกจากระบบ</button>
+            </div>
+        </header>
+
+        <!-- Menu Tabs -->
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('gacha')">🎁 กล่องสุ่ม</button>
+            <button class="tab-btn" onclick="switchTab('shop')">🛒 ร้านค้า</button>
+            <button class="tab-btn" onclick="switchTab('inventory')">🎒 คลังของฉัน</button>
+            <button class="tab-btn" onclick="switchTab('mailbox')">📫 กล่องจดหมาย</button>
+            <button class="tab-btn" onclick="openYouTube()">📺 YouTube</button>
+            <button id="admin-tab-btn" class="tab-btn admin-btn hidden" onclick="switchTab('admin')">⚙️ หลังบ้านแอดมิน (Real-time)</button>
+        </div>
+
+        <!-- Main Content View -->
+        <main class="content-area">
+            <!-- Gacha Tab -->
+            <section id="tab-gacha" class="tab-content active">
+                <div class="gacha-box">
+                    <h2>🎁 สุ่มการ์ดความทรงจำ</h2>
+                    <p>สุ่มครั้งละ <strong>100 💎</strong></p>
+                    <div class="gacha-icon">❓</div>
+                    <button class="btn btn-accent btn-lg" onclick="playGacha()">กดเพื่อสุ่มการ์ด!</button>
+                </div>
+            </section>
+
+            <!-- Shop Tab -->
+            <section id="tab-shop" class="tab-content">
+                <h2>🛒 ร้านค้าการ์ด</h2>
+                <div id="shop-list" class="cards-grid"></div>
+            </section>
+
+            <!-- Inventory Tab -->
+            <section id="tab-inventory" class="tab-content">
+                <h2>🎒 คลังการ์ดของคุณ</h2>
+                <div id="inventory-list" class="cards-grid"></div>
+            </section>
+
+            <!-- Mailbox Tab -->
+            <section id="tab-mailbox" class="tab-content">
+                <h2>📫 กล่องจดหมาย</h2>
+                <div id="mailbox-list" class="cards-grid"></div>
+            </section>
+
+            <!-- Admin Panel Tab -->
+            <section id="tab-admin" class="tab-content">
+                <div class="admin-panel">
+                    <h2>⚙️ Real-time Admin Monitoring Dashboard</h2>
+
+                    <!-- Live Online Status & Logs -->
+                    <div class="admin-card">
+                        <h3>🔴 ประวัติกิจกรรมผู้ใช้งาน Real-time Logs</h3>
+                        <div id="realtime-logs" class="logs-container">กำลังโหลดข้อมูล...</div>
+                    </div>
+
+                    <!-- Manage Users -->
+                    <div class="admin-card">
+                        <h3>👥 บัญชีผู้เล่นทั้งหมดในระบบ (ดูรหัสผ่าน & ยอดเพชร)</h3>
+                        <div id="admin-users-table" class="admin-table-container"></div>
+                    </div>
+
+                    <!-- Add New Card -->
+                    <div class="admin-card">
+                        <h3>🖼️ เพิ่มการ์ดใหม่ (อัปโหลดรูปภาพตรงจากเครื่อง)</h3>
+                        <form onsubmit="adminAddCard(event)">
+                            <div class="input-group">
+                                <label>ชื่อการ์ด / ตัวละคร</label>
+                                <input type="text" id="card-title" required>
+                            </div>
+                            <div class="input-group">
+                                <label>ข้อความบนการ์ด</label>
+                                <textarea id="card-msg" rows="2"></textarea>
+                            </div>
+                            <div class="input-group">
+                                <label>อัปโหลดรูปภาพจากเครื่อง</label>
+                                <input type="file" id="card-img-file" accept="image/*" onchange="compressImage(event)">
+                                <img id="img-preview" class="img-preview hidden">
+                            </div>
+                            <div class="form-row">
+                                <div class="input-group"><label>ราคาขาย (💎)</label><input type="number" id="card-price" value="200" required></div>
+                                <div class="input-group"><label>ราคาขายคืน (💎)</label><input type="number" id="card-sell" value="100" required></div>
+                                <div class="input-group"><label>อัตราสุ่ม (%)</label><input type="number" id="card-rate" value="50" required></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">อัปโหลดการ์ดขึ้น Cloud</button>
+                        </form>
+                        <h4 style="margin-top:15px;">รายการการ์ดปัจจุบัน</h4>
+                        <div id="admin-cards-table" class="admin-table-container"></div>
+                    </div>
+
+                    <!-- Send Mail & Diamonds -->
+                    <div class="admin-card">
+                        <h3>✉️ ส่งเพชร / จดหมายหาผู้เล่น</h3>
+                        <div class="input-group">
+                            <label>เลือกผู้รับ</label>
+                            <select id="admin-mail-target"></select>
+                        </div>
+                        <div class="input-group">
+                            <label>ข้อความแนบ</label>
+                            <input type="text" id="admin-mail-msg" placeholder="ข้อความหวานๆ หรือแจ้งกิจกรรม">
+                        </div>
+                        <div class="input-group">
+                            <label>จำนวนเพชรที่จะส่ง (💎)</label>
+                            <input type="number" id="admin-mail-amt" value="500">
+                        </div>
+                        <button class="btn btn-accent" onclick="adminSendMail()">ส่งจดหมาย Real-time</button>
+                    </div>
+
+                    <!-- Welcome Popup Config -->
+                    <div class="admin-card">
+                        <h3>💬 แก้ไขข้อความป็อบอัปต้อนรับ</h3>
+                        <textarea id="admin-welcome-input" rows="2"></textarea>
+                        <button class="btn btn-primary" style="margin-top:10px;" onclick="adminSaveWelcome()">บันทึกข้อความ</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Popup Notice -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 id="modal-title">แจ้งเตือน</h3>
+            <div id="modal-body" style="margin:15px 0;"></div>
+            <button class="btn btn-primary" onclick="closeModal()">ตกลง</button>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/gacha.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
